@@ -54,9 +54,11 @@ class HomeView extends StatelessWidget {
               child: Obx(() => switch ((viewModel.isLoading.value, viewModel.latestFiles.isEmpty)) {
                 (true, _) => const Center(child: CircularProgressIndicator()),
                 (false, true) => Center(child: Text('No latest files available', style: textTheme.bodyMedium)),
-                (false, false) => ListView.builder(
-                  itemCount: viewModel.latestFiles.length,
-                  itemBuilder: (context, index) {
+                (false, false) => RefreshIndicator(
+                  onRefresh: viewModel.fetchLatestFiles,
+                  child: ListView.builder(
+                    itemCount: viewModel.latestFiles.length,
+                    itemBuilder: (context, index) {
                     final file = viewModel.latestFiles[index];
                     return Card(
                       margin: const EdgeInsets.only(bottom: 10),
@@ -123,7 +125,8 @@ class HomeView extends StatelessWidget {
                         ),
                       ),
                     );
-                  },
+                    },
+                  ),
                 ),
               }),
             ),

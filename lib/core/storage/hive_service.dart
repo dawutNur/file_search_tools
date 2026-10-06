@@ -7,6 +7,7 @@ class HiveService {
     await Hive.initFlutter();
     Hive.registerAdapter(FileModelAdapter());
     await Hive.openBox<String>(AppConstants.historyBoxName);
+    await Hive.openBox<FileModel>(AppConstants.favoritesBoxName);
   }
 
   Future<void> saveSearchQuery(String query) async {
@@ -35,6 +36,33 @@ class HiveService {
 
   Future<void> clearHistory() async {
     final box = Hive.box<String>(AppConstants.historyBoxName);
+    await box.clear();
+  }
+
+  // --- Favorites ---
+  Future<void> addFavorite(FileModel file) async {
+    final box = Hive.box<FileModel>(AppConstants.favoritesBoxName);
+    // Use URL as key to prevent duplicates
+    await box.put(file.url, file);
+  }
+
+  Future<void> removeFavorite(String url) async {
+    final box = Hive.box<FileModel>(AppConstants.favoritesBoxName);
+    await box.delete(url);
+  }
+
+  bool isFavorite(String url) {
+    final box = Hive.box<FileModel>(AppConstants.favoritesBoxName);
+    return box.containsKey(url);
+  }
+
+  List<FileModel> getFavorites() {
+    final box = Hive.box<FileModel>(AppConstants.favoritesBoxName);
+    return box.values.toList().reversed.toList();
+  }
+
+  Future<void> clearFavorites() async {
+    final box = Hive.box<FileModel>(AppConstants.favoritesBoxName);
     await box.clear();
   }
 }

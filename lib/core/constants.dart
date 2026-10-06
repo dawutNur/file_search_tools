@@ -20,6 +20,7 @@ class AppConstants {
 
   // Storage Keys
   static const String historyBoxName = 'search_history';
+  static const String favoritesBoxName = 'favorites';
   static const int maxHistoryItems = 20;
 
   // Search Configuration

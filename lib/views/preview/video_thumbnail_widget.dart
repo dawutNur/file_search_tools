@@ -49,6 +49,9 @@ class _VideoThumbnailWidgetState extends State<VideoThumbnailWidget> {
   // For single thumbnail (list view), use first carousel position (3:00 middle)
   static const int _singleThumbnailTime = 180000; // 3 minutes into video
 
+  // Thumbnail load timeout (60 seconds for slow connections)
+  static const Duration _thumbnailTimeout = Duration(seconds: 60);
+
   /// Load a single thumbnail with specified parameters
   Future<Uint8List?> _loadSingleThumbnail(
     String url,
@@ -63,7 +66,7 @@ class _VideoThumbnailWidgetState extends State<VideoThumbnailWidget> {
         maxWidth: maxWidth,
         quality: quality,
         timeMs: timeMs,
-      );
+      ).timeout(_thumbnailTimeout);
     } catch (e) {
       return null;
     }

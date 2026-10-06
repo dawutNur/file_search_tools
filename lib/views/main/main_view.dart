@@ -4,6 +4,7 @@ import 'package:file_search_tools/core/navigation_controller.dart';
 import 'package:file_search_tools/core/theme/app_theme.dart';
 import 'package:file_search_tools/views/home/home_view.dart';
 import 'package:file_search_tools/views/search/search_page.dart';
+import 'package:file_search_tools/views/favorites/favorites_view.dart';
 import 'package:file_search_tools/views/stats/stats_view.dart';
 import 'package:file_search_tools/views/history/history_view.dart';
 
@@ -17,6 +18,7 @@ class MainView extends StatelessWidget {
     final List<Widget> views = [
       const HomeView(),
       const SearchView(),
+      const FavoritesView(),
       const StatsView(),
       const HistoryView(),
     ];
@@ -34,14 +36,9 @@ class MainView extends StatelessWidget {
           items: const [
             BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
             BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Search'),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.bar_chart),
-              label: 'Stats',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.history),
-              label: 'History',
-            ),
+            BottomNavigationBarItem(icon: Icon(Icons.favorite), label: 'Favorites'),
+            BottomNavigationBarItem(icon: Icon(Icons.bar_chart), label: 'Stats'),
+            BottomNavigationBarItem(icon: Icon(Icons.history), label: 'History'),
           ],
         ),
       ),

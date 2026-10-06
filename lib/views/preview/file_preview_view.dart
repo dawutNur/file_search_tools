@@ -6,6 +6,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:android_intent_plus/android_intent.dart';
 import '../../data/repositories/file_repository.dart';
 import '../../data/models/file_model.dart';
+import '../../viewmodels/favorites_view_model.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'video_player_widget.dart';
 import 'video_thumbnail_widget.dart';
@@ -321,11 +322,26 @@ class FilePreviewView extends StatelessWidget {
         category.contains('pdf') || file.name.toLowerCase().endsWith('.pdf');
 
     final colorScheme = Theme.of(context).colorScheme;
+    final favoritesViewModel = Get.put(FavoritesViewModel());
 
     return Scaffold(
       appBar: AppBar(
         title: Text(file.name, overflow: TextOverflow.ellipsis),
         actions: [
+          Obx(() => IconButton(
+            icon: Icon(
+              favoritesViewModel.isFavorite(file.url)
+                  ? Icons.favorite
+                  : Icons.favorite_border,
+              color: favoritesViewModel.isFavorite(file.url)
+                  ? colorScheme.error
+                  : null,
+            ),
+            tooltip: favoritesViewModel.isFavorite(file.url)
+                ? 'Remove from favorites'
+                : 'Add to favorites',
+            onPressed: () => favoritesViewModel.toggleFavorite(file),
+          )),
           IconButton(
             icon: const Icon(Icons.open_in_browser),
             tooltip: 'Open in browser',
