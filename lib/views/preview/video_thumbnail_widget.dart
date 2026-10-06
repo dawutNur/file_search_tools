@@ -1,7 +1,6 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
-import 'package:visibility_detector/visibility_detector.dart';
 
 class VideoThumbnailWidget extends StatefulWidget {
   final String videoUrl;
@@ -29,36 +28,21 @@ class _VideoThumbnailWidgetState extends State<VideoThumbnailWidget> {
   final List<Uint8List> _thumbnails = [];
   bool _isLoading = true;
   bool _hasError = false;
-  bool _hasStartedLoading = false;
   int _currentPage = 0;
   final PageController _pageController = PageController();
 
   // Static cache to persist thumbnails across widget rebuilds
   static final Map<String, List<Uint8List>> _thumbnailCache = {};
 
-  // Time positions for carousel: 3 from middle, 3 from end (no start)
+  // Time positions for carousel: 3 from middle, 3 from end
   static const List<int> _carouselTimePositions = [
-    180000,   // 3:00 - middle section
-    240000,   // 4:00 - middle section
-    300000,   // 5:00 - middle section
-    420000,   // 7:00 - end section
-    480000,   // 8:00 - end section
-    540000,   // 9:00 - end section
+    180000, 240000, 300000, 420000, 480000, 540000,
   ];
 
-  // For single thumbnail (list view), use first carousel position (3:00 middle)
-  static const int _singleThumbnailTime = 180000; // 3 minutes into video
-
-  // Thumbnail load timeout (60 seconds for slow connections)
+  static const int _singleThumbnailTime = 180000;
   static const Duration _thumbnailTimeout = Duration(seconds: 60);
 
-  /// Load a single thumbnail with specified parameters
-  Future<Uint8List?> _loadSingleThumbnail(
-    String url,
-    int timeMs,
-    int maxWidth,
-    int quality,
-  ) async {
+  Future<Uint8List?> _loadSingleThumbnail(String url, int timeMs, int maxWidth, int quality) async {
     try {
       return await VideoThumbnail.thumbnailData(
         video: url,
@@ -72,37 +56,21 @@ class _VideoThumbnailWidgetState extends State<VideoThumbnailWidget> {
     }
   }
 
-  void _onVisibilityChanged(VisibilityInfo info) {
-    // Start loading when at least 10% visible
-    if (info.visibleFraction > 0.1 && !_hasStartedLoading) {
-      _hasStartedLoading = true;
-      _loadThumbnails();
-    }
-  }
-
   String _normalizeUrl(String url) {
-    var normalizedUrl = url.trim();
-    if (!normalizedUrl.startsWith('http://') &&
-        !normalizedUrl.startsWith('https://')) {
-      normalizedUrl = 'https://$normalizedUrl';
+    var normalized = url.trim();
+    if (!normalized.startsWith('http://') && !normalized.startsWith('https://')) {
+      normalized = 'https://$normalized';
     }
-    if (normalizedUrl.startsWith('http://')) {
-      normalizedUrl = normalizedUrl.replaceFirst('http://', 'https://');
+    if (normalized.startsWith('http://')) {
+      normalized = normalized.replaceFirst('http://', 'https://');
     }
-    return normalizedUrl;
+    return normalized;
   }
 
   @override
   void initState() {
     super.initState();
-    // Check cache immediately - if cached, load without waiting for visibility
-    final normalizedUrl = _normalizeUrl(widget.videoUrl);
-    final cacheKey = '${normalizedUrl}_${widget.thumbnailCount}';
-    if (_thumbnailCache.containsKey(cacheKey)) {
-      _hasStartedLoading = true;
-      _thumbnails.addAll(_thumbnailCache[cacheKey]!);
-      _isLoading = false;
-    }
+    _loadThumbnails();
   }
 
   @override
@@ -128,13 +96,7 @@ class _VideoThumbnailWidgetState extends State<VideoThumbnailWidget> {
 
     final count = widget.showMultiple ? widget.thumbnailCount : 1;
 
-    // Optimized for 6 Mbit/s (~750 KB/s):
-    // - Reduced resolution: 320px carousel, 150px single
-    // - Lower quality: 65% carousel, 60% single (~20-40KB each)
-    // - Sequential loading for stability
-
     if (widget.showMultiple) {
-      // Sequential loading for carousel
       for (int i = 0; i < count; i++) {
         final timeMs = _carouselTimePositions[i % _carouselTimePositions.length];
         final thumbnail = await _loadSingleThumbnail(normalizedUrl, timeMs, 320, 65);
@@ -151,13 +113,7 @@ class _VideoThumbnailWidgetState extends State<VideoThumbnailWidget> {
         _thumbnailCache[cacheKey] = _thumbnails.toList();
       }
     } else {
-      // Single thumbnail for list view
-      final thumbnail = await _loadSingleThumbnail(
-        normalizedUrl,
-        _singleThumbnailTime,
-        150,
-        60,
-      );
+      final thumbnail = await _loadSingleThumbnail(normalizedUrl, _singleThumbnailTime, 150, 60);
 
       if (thumbnail != null && mounted) {
         setState(() {
@@ -181,21 +137,16 @@ class _VideoThumbnailWidgetState extends State<VideoThumbnailWidget> {
     final colorScheme = Theme.of(context).colorScheme;
     final borderRadius = widget.borderRadius ?? BorderRadius.circular(8);
 
-    // Wrap with VisibilityDetector for lazy loading
-    return VisibilityDetector(
-      key: Key('video_thumb_${widget.videoUrl.hashCode}_${identityHashCode(this)}'),
-      onVisibilityChanged: _onVisibilityChanged,
-      child: widget.showMultiple
-          ? _buildMultipleThumbnails(colorScheme, borderRadius)
-          : ClipRRect(
-              borderRadius: borderRadius,
-              child: SizedBox(
-                width: widget.width,
-                height: widget.height,
-                child: _buildSingleContent(colorScheme),
-              ),
+    return widget.showMultiple
+        ? _buildMultipleThumbnails(colorScheme, borderRadius)
+        : ClipRRect(
+            borderRadius: borderRadius,
+            child: SizedBox(
+              width: widget.width,
+              height: widget.height,
+              child: _buildSingleContent(colorScheme),
             ),
-    );
+          );
   }
 
   Widget _buildMultipleThumbnails(ColorScheme colorScheme, BorderRadius borderRadius) {
@@ -207,13 +158,13 @@ class _VideoThumbnailWidgetState extends State<VideoThumbnailWidget> {
             color: colorScheme.surfaceContainerHighest,
             borderRadius: borderRadius,
           ),
-          child: const Center(
+          child: Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                CircularProgressIndicator(),
-                SizedBox(height: 8),
-                Text('Loading thumbnails...'),
+                CircularProgressIndicator(color: colorScheme.primary),
+                const SizedBox(height: 8),
+                Text('Loading...', style: TextStyle(color: colorScheme.outline)),
               ],
             ),
           ),
@@ -249,33 +200,22 @@ class _VideoThumbnailWidgetState extends State<VideoThumbnailWidget> {
         aspectRatio: 16 / 9,
         child: Stack(
           children: [
-            // Carousel
             PageView.builder(
               controller: _pageController,
               itemCount: _thumbnails.length,
-              onPageChanged: (index) {
-                setState(() {
-                  _currentPage = index;
-                });
-              },
+              onPageChanged: (index) => setState(() => _currentPage = index),
               itemBuilder: (context, index) {
-                final thumbnail = _thumbnails[index];
                 return Stack(
                   fit: StackFit.expand,
                   children: [
-                    Image.memory(
-                      thumbnail,
-                      fit: BoxFit.cover,
-                      filterQuality: FilterQuality.high,
-                    ),
-                    // Time indicator
+                    Image.memory(_thumbnails[index], fit: BoxFit.cover),
                     Positioned(
                       top: 8,
                       right: 8,
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: Colors.black.withValues(alpha: 0.7),
+                          color: Colors.black54,
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
@@ -288,7 +228,6 @@ class _VideoThumbnailWidgetState extends State<VideoThumbnailWidget> {
                 );
               },
             ),
-            // Dot indicators
             Positioned(
               bottom: 12,
               left: 0,
@@ -297,22 +236,18 @@ class _VideoThumbnailWidgetState extends State<VideoThumbnailWidget> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: List.generate(_thumbnails.length, (index) {
                   final isActive = index == _currentPage;
-                  return AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
+                  return Container(
                     margin: const EdgeInsets.symmetric(horizontal: 3),
                     width: isActive ? 24 : 8,
                     height: 8,
                     decoration: BoxDecoration(
-                      color: isActive
-                          ? Colors.white
-                          : Colors.white.withValues(alpha: 0.5),
+                      color: isActive ? Colors.white : Colors.white54,
                       borderRadius: BorderRadius.circular(4),
                     ),
                   );
                 }),
               ),
             ),
-            // Loading indicator for more thumbnails
             if (_isLoading)
               Positioned(
                 top: 8,
@@ -320,25 +255,12 @@ class _VideoThumbnailWidgetState extends State<VideoThumbnailWidget> {
                 child: Container(
                   padding: const EdgeInsets.all(6),
                   decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.7),
+                    color: Colors.black54,
                     borderRadius: BorderRadius.circular(4),
                   ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const SizedBox.square(
-                        dimension: 12,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        '${_thumbnails.length}/6',
-                        style: const TextStyle(color: Colors.white, fontSize: 11),
-                      ),
-                    ],
+                  child: Text(
+                    '${_thumbnails.length}/6',
+                    style: const TextStyle(color: Colors.white, fontSize: 11),
                   ),
                 ),
               ),
@@ -349,11 +271,9 @@ class _VideoThumbnailWidgetState extends State<VideoThumbnailWidget> {
   }
 
   String _getTimeLabel(int index) {
-    final times = ['3:00', '4:00', '5:00', '7:00', '8:00', '9:00'];
-    final sections = ['Middle', 'Middle', 'Middle', 'End', 'End', 'End'];
-    if (index < times.length) {
-      return '${sections[index]} • ${times[index]}';
-    }
+    const times = ['3:00', '4:00', '5:00', '7:00', '8:00', '9:00'];
+    const sections = ['Middle', 'Middle', 'Middle', 'End', 'End', 'End'];
+    if (index < times.length) return '${sections[index]} • ${times[index]}';
     return '';
   }
 
@@ -361,57 +281,28 @@ class _VideoThumbnailWidgetState extends State<VideoThumbnailWidget> {
     if (_isLoading) {
       return Container(
         color: colorScheme.surfaceContainerHighest,
-        child: Center(
-          child: SizedBox.square(
-            dimension: 20,
-            child: CircularProgressIndicator(
-              strokeWidth: 2,
-              color: colorScheme.primary,
-            ),
-          ),
-        ),
+        child: Icon(Icons.video_file, color: colorScheme.outline),
       );
     }
 
     if (_hasError || _thumbnails.isEmpty) {
       return Container(
         color: colorScheme.surfaceContainerHighest,
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            Icon(Icons.video_file, color: colorScheme.primary, size: 28),
-            Positioned(
-              bottom: 4,
-              right: 4,
-              child: Container(
-                padding: const EdgeInsets.all(2),
-                decoration: BoxDecoration(
-                  color: colorScheme.primary,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Icon(Icons.play_arrow, color: colorScheme.onPrimary, size: 12),
-              ),
-            ),
-          ],
-        ),
+        child: Icon(Icons.video_file, color: colorScheme.primary, size: 28),
       );
     }
 
     return Stack(
       fit: StackFit.expand,
       children: [
-        Image.memory(
-          _thumbnails.first,
-          fit: BoxFit.cover,
-          filterQuality: FilterQuality.high,
-        ),
+        Image.memory(_thumbnails.first, fit: BoxFit.cover),
         Positioned(
           bottom: 4,
           right: 4,
           child: Container(
             padding: const EdgeInsets.all(3),
             decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.7),
+              color: Colors.black54,
               borderRadius: BorderRadius.circular(4),
             ),
             child: const Icon(Icons.play_arrow, color: Colors.white, size: 14),

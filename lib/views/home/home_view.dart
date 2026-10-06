@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:file_search_tools/data/models/file_model.dart';
 import 'package:file_search_tools/viewmodels/home_view_model.dart';
 import 'package:file_search_tools/core/navigation_controller.dart';
 import 'package:file_search_tools/views/preview/file_preview_view.dart';
 import 'package:file_search_tools/views/preview/video_thumbnail_widget.dart';
-import 'package:file_search_tools/views/preview/lazy_network_image.dart';
 
 class HomeView extends StatelessWidget {
   const HomeView({super.key});
@@ -136,6 +136,17 @@ class HomeView extends StatelessWidget {
     );
   }
 
+  String _normalizeUrl(String url) {
+    var normalized = url.trim();
+    if (!normalized.startsWith('http://') && !normalized.startsWith('https://')) {
+      normalized = 'https://$normalized';
+    }
+    if (normalized.startsWith('http://')) {
+      normalized = normalized.replaceFirst('http://', 'https://');
+    }
+    return normalized;
+  }
+
   Widget _buildMediaPreview(FileModel file, ColorScheme colorScheme) {
     final category = file.category.toLowerCase();
     final fileName = file.name.toLowerCase();
@@ -153,11 +164,26 @@ class HomeView extends StatelessWidget {
         fileName.endsWith('.mov');
 
     if (isImage) {
-      return LazyNetworkImage(
-        imageUrl: file.url,
-        width: 100,
-        height: 100,
+      return ClipRRect(
         borderRadius: BorderRadius.circular(8),
+        child: SizedBox(
+          width: 100,
+          height: 100,
+          child: CachedNetworkImage(
+            imageUrl: _normalizeUrl(file.url),
+            fit: BoxFit.cover,
+            memCacheWidth: 200,
+            memCacheHeight: 200,
+            placeholder: (context, url) => Container(
+              color: colorScheme.surfaceContainerHighest,
+              child: Icon(Icons.image, color: colorScheme.outline),
+            ),
+            errorWidget: (context, url, error) => Container(
+              color: colorScheme.surfaceContainerHighest,
+              child: Icon(Icons.broken_image, color: colorScheme.outline),
+            ),
+          ),
+        ),
       );
     }
 

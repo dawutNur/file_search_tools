@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../data/models/file_model.dart';
 import '../../viewmodels/favorites_view_model.dart';
 import '../preview/file_preview_view.dart';
 import '../preview/video_thumbnail_widget.dart';
-import '../preview/lazy_network_image.dart';
 
 class FavoritesView extends StatelessWidget {
   const FavoritesView({super.key});
@@ -153,6 +153,17 @@ class FavoritesView extends StatelessWidget {
     );
   }
 
+  String _normalizeUrl(String url) {
+    var normalized = url.trim();
+    if (!normalized.startsWith('http://') && !normalized.startsWith('https://')) {
+      normalized = 'https://$normalized';
+    }
+    if (normalized.startsWith('http://')) {
+      normalized = normalized.replaceFirst('http://', 'https://');
+    }
+    return normalized;
+  }
+
   Widget _buildMediaPreview(FileModel file, ColorScheme colorScheme) {
     final category = file.category.toLowerCase();
     final fileName = file.name.toLowerCase();
@@ -170,11 +181,26 @@ class FavoritesView extends StatelessWidget {
         fileName.endsWith('.mov');
 
     if (isImage) {
-      return LazyNetworkImage(
-        imageUrl: file.url,
-        width: 100,
-        height: 100,
+      return ClipRRect(
         borderRadius: BorderRadius.circular(8),
+        child: SizedBox(
+          width: 100,
+          height: 100,
+          child: CachedNetworkImage(
+            imageUrl: _normalizeUrl(file.url),
+            fit: BoxFit.cover,
+            memCacheWidth: 200,
+            memCacheHeight: 200,
+            placeholder: (context, url) => Container(
+              color: colorScheme.surfaceContainerHighest,
+              child: Icon(Icons.image, color: colorScheme.outline),
+            ),
+            errorWidget: (context, url, error) => Container(
+              color: colorScheme.surfaceContainerHighest,
+              child: Icon(Icons.broken_image, color: colorScheme.outline),
+            ),
+          ),
+        ),
       );
     }
 
