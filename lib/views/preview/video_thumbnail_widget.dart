@@ -131,30 +131,19 @@ class _VideoThumbnailWidgetState extends State<VideoThumbnailWidget> {
     // Optimized for 6 Mbit/s (~750 KB/s):
     // - Reduced resolution: 320px carousel, 150px single
     // - Lower quality: 65% carousel, 60% single (~20-40KB each)
-    // - Parallel loading with concurrency limit of 3
+    // - Sequential loading for stability
 
     if (widget.showMultiple) {
-      // Parallel loading for carousel - load in batches of 3
-      final futures = <Future<Uint8List?>>[];
-
+      // Sequential loading for carousel
       for (int i = 0; i < count; i++) {
         final timeMs = _carouselTimePositions[i % _carouselTimePositions.length];
-        futures.add(_loadSingleThumbnail(normalizedUrl, timeMs, 320, 65));
-      }
+        final thumbnail = await _loadSingleThumbnail(normalizedUrl, timeMs, 320, 65);
 
-      // Process in batches of 3 for controlled concurrency
-      const batchSize = 3;
-      for (int i = 0; i < futures.length; i += batchSize) {
-        final batch = futures.skip(i).take(batchSize).toList();
-        final results = await Future.wait(batch);
-
-        for (final thumbnail in results) {
-          if (thumbnail != null && mounted) {
-            setState(() {
-              _thumbnails.add(thumbnail);
-              _isLoading = _thumbnails.length < count;
-            });
-          }
+        if (thumbnail != null && mounted) {
+          setState(() {
+            _thumbnails.add(thumbnail);
+            _isLoading = _thumbnails.length < count;
+          });
         }
       }
 
