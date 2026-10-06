@@ -5,7 +5,7 @@ import 'package:file_search_tools/core/theme/app_theme.dart';
 import 'package:file_search_tools/views/home/home_view.dart';
 import 'package:file_search_tools/views/search/search_page.dart';
 import 'package:file_search_tools/views/favorites/favorites_view.dart';
-import 'package:file_search_tools/views/stats/stats_view.dart';
+import 'package:file_search_tools/views/submit/submit_view.dart';
 import 'package:file_search_tools/views/history/history_view.dart';
 
 class MainView extends StatelessWidget {
@@ -19,7 +19,7 @@ class MainView extends StatelessWidget {
       const HomeView(),
       const SearchView(),
       const FavoritesView(),
-      const StatsView(),
+      const SubmitView(),
       const HistoryView(),
     ];
 
@@ -37,7 +37,7 @@ class MainView extends StatelessWidget {
             BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
             BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Search'),
             BottomNavigationBarItem(icon: Icon(Icons.favorite), label: 'Favorites'),
-            BottomNavigationBarItem(icon: Icon(Icons.bar_chart), label: 'Stats'),
+            BottomNavigationBarItem(icon: Icon(Icons.cloud_upload), label: 'Submit'),
             BottomNavigationBarItem(icon: Icon(Icons.history), label: 'History'),
           ],
         ),
