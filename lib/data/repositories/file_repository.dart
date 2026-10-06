@@ -11,6 +11,7 @@ class FileRepository {
   Future<SearchResponseModel> searchFiles({
     required String query,
     int page = 1,
+    int perPage = 12,
     String sortBy = 'name',
     String order = 'asc',
     String? category,
@@ -18,6 +19,7 @@ class FileRepository {
     final response = await _apiService.searchFiles(
       query: query,
       page: page,
+      perPage: perPage,
       sortBy: sortBy,
       order: order,
       category: category,
