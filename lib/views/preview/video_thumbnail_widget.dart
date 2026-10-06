@@ -34,12 +34,12 @@ class _VideoThumbnailWidgetState extends State<VideoThumbnailWidget> {
   // Static cache to persist thumbnails across widget rebuilds
   static final Map<String, List<Uint8List>> _thumbnailCache = {};
 
-  // Time positions for carousel: 3 from middle, 3 from end
+  // Time positions for carousel (in ms): 30s, 60s, 90s, 120s, 150s, 180s
   static const List<int> _carouselTimePositions = [
-    180000, 240000, 300000, 420000, 480000, 540000,
+    30000, 60000, 90000, 120000, 150000, 180000,
   ];
 
-  static const int _singleThumbnailTime = 180000;
+  static const int _singleThumbnailTime = 0; // Start of video for reliability
   static const Duration _thumbnailTimeout = Duration(seconds: 60);
 
   Future<Uint8List?> _loadSingleThumbnail(String url, int timeMs, int maxWidth, int quality) async {
@@ -271,9 +271,8 @@ class _VideoThumbnailWidgetState extends State<VideoThumbnailWidget> {
   }
 
   String _getTimeLabel(int index) {
-    const times = ['3:00', '4:00', '5:00', '7:00', '8:00', '9:00'];
-    const sections = ['Middle', 'Middle', 'Middle', 'End', 'End', 'End'];
-    if (index < times.length) return '${sections[index]} • ${times[index]}';
+    const times = ['0:30', '1:00', '1:30', '2:00', '2:30', '3:00'];
+    if (index < times.length) return times[index];
     return '';
   }
 

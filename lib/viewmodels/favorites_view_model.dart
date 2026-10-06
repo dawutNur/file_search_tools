@@ -18,7 +18,8 @@ class FavoritesViewModel extends GetxController {
   }
 
   bool isFavorite(String url) {
-    return _hiveService.isFavorite(url);
+    // Check against reactive favorites list for proper Obx updates
+    return favorites.any((f) => f.url == url);
   }
 
   Future<void> toggleFavorite(FileModel file) async {
