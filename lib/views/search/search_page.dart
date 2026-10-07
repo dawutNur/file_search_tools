@@ -5,7 +5,6 @@ import '../../data/models/file_model.dart';
 import '../../viewmodels/search_view_model.dart';
 import '../../core/storage/hive_service.dart';
 import '../preview/file_preview_view.dart';
-import '../preview/video_thumbnail_widget.dart';
 
 class SearchView extends StatelessWidget {
   const SearchView({super.key});
@@ -336,17 +335,9 @@ class SearchView extends StatelessWidget {
       );
     }
 
-    if (isVideo) {
-      return VideoThumbnailWidget(
-        videoUrl: file.url,
-        width: 100,
-        height: 100,
-        borderRadius: BorderRadius.circular(8),
-      );
-    }
-
     // Default icon for other file types
     final iconData = switch (category) {
+      _ when isVideo => Icons.video_file,
       'audio' => Icons.audio_file,
       'pdf' => Icons.picture_as_pdf,
       'doc' => Icons.description,

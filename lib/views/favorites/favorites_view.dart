@@ -4,7 +4,6 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../../data/models/file_model.dart';
 import '../../viewmodels/favorites_view_model.dart';
 import '../preview/file_preview_view.dart';
-import '../preview/video_thumbnail_widget.dart';
 
 class FavoritesView extends StatelessWidget {
   const FavoritesView({super.key});
@@ -204,16 +203,8 @@ class FavoritesView extends StatelessWidget {
       );
     }
 
-    if (isVideo) {
-      return VideoThumbnailWidget(
-        videoUrl: file.url,
-        width: 100,
-        height: 100,
-        borderRadius: BorderRadius.circular(8),
-      );
-    }
-
     final iconData = switch (category) {
+      _ when isVideo => Icons.video_file,
       'audio' => Icons.audio_file,
       'pdf' => Icons.picture_as_pdf,
       'doc' => Icons.description,

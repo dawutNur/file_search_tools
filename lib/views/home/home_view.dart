@@ -5,7 +5,6 @@ import 'package:file_search_tools/data/models/file_model.dart';
 import 'package:file_search_tools/viewmodels/home_view_model.dart';
 import 'package:file_search_tools/core/navigation_controller.dart';
 import 'package:file_search_tools/views/preview/file_preview_view.dart';
-import 'package:file_search_tools/views/preview/video_thumbnail_widget.dart';
 
 class HomeView extends StatelessWidget {
   const HomeView({super.key});
@@ -187,16 +186,8 @@ class HomeView extends StatelessWidget {
       );
     }
 
-    if (isVideo) {
-      return VideoThumbnailWidget(
-        videoUrl: file.url,
-        width: 100,
-        height: 100,
-        borderRadius: BorderRadius.circular(8),
-      );
-    }
-
     final iconData = switch (category) {
+      _ when isVideo => Icons.video_file,
       'audio' => Icons.audio_file,
       'pdf' => Icons.picture_as_pdf,
       'doc' => Icons.description,

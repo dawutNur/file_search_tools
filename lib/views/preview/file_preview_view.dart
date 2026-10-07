@@ -8,8 +8,6 @@ import '../../data/repositories/file_repository.dart';
 import '../../data/models/file_model.dart';
 import '../../viewmodels/favorites_view_model.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'video_player_widget.dart';
-import 'video_thumbnail_widget.dart';
 
 class FilePreviewView extends StatelessWidget {
   final FileModel file;
@@ -451,19 +449,33 @@ class FilePreviewView extends StatelessWidget {
     }
 
     if (isVideo) {
-      return Column(
-        spacing: 16,
-        children: [
-          // Carousel thumbnails preview (6 thumbnails from start, middle, end)
-          VideoThumbnailWidget(
-            videoUrl: file.url,
-            showMultiple: true,
-            thumbnailCount: 6,
-            borderRadius: BorderRadius.circular(12),
+      return Material(
+        color: colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(12),
+        child: InkWell(
+          onTap: () => _showBrowserSelectionDialog(context),
+          borderRadius: BorderRadius.circular(12),
+          child: SizedBox(
+            height: 150,
+            width: double.infinity,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              spacing: 12,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: colorScheme.primary,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(Icons.play_arrow, size: 32, color: colorScheme.onPrimary),
+                ),
+                Text('Video File', style: textTheme.titleMedium),
+                Text('Tap to play in browser', style: textTheme.bodySmall),
+              ],
+            ),
           ),
-          // Video player
-          VideoPlayerWidget(videoUrl: file.url),
-        ],
+        ),
       );
     }
 
