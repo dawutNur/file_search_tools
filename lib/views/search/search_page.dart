@@ -6,8 +6,41 @@ import '../../viewmodels/search_view_model.dart';
 import '../../core/storage/hive_service.dart';
 import '../preview/file_preview_view.dart';
 
-class SearchView extends StatelessWidget {
+class SearchView extends StatefulWidget {
   const SearchView({super.key});
+
+  @override
+  State<SearchView> createState() => _SearchViewState();
+}
+
+class _SearchViewState extends State<SearchView> {
+  final searchController = TextEditingController();
+  final scrollController = ScrollController();
+  bool _showScrollUp = false;
+
+  @override
+  void initState() {
+    super.initState();
+    scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    searchController.dispose();
+    scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    final showButton = scrollController.offset > 300;
+    if (showButton != _showScrollUp) {
+      setState(() => _showScrollUp = showButton);
+    }
+  }
+
+  void _scrollToTop() {
+    scrollController.animateTo(0, duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -15,19 +48,52 @@ class SearchView extends StatelessWidget {
     final hiveService = Get.find<HiveService>();
     final textTheme = Theme.of(context).textTheme;
     final colorScheme = Theme.of(context).colorScheme;
-    final searchController = TextEditingController();
-    final scrollController = ScrollController();
-
-    scrollController.addListener(() {
-      if (scrollController.position.pixels >= scrollController.position.maxScrollExtent - 200) {
-        if (!viewModel.isLoading.value && viewModel.hasNext.value) {
-          viewModel.loadNextPage();
-        }
-      }
-    });
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Search')),
+      appBar: AppBar(
+        title: const Text('Search'),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(48),
+          child: Obx(() => viewModel.totalPages.value > 1
+              ? Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      IconButton.filled(
+                        onPressed: viewModel.currentPage.value > 1
+                            ? () {
+                                viewModel.loadPage(viewModel.currentPage.value - 1);
+                                _scrollToTop();
+                              }
+                            : null,
+                        icon: const Icon(Icons.chevron_left),
+                      ),
+                      Text(
+                        'Page ${viewModel.currentPage.value} / ${viewModel.totalPages.value}',
+                        style: textTheme.titleSmall,
+                      ),
+                      IconButton.filled(
+                        onPressed: viewModel.hasNext.value
+                            ? () {
+                                viewModel.loadPage(viewModel.currentPage.value + 1);
+                                _scrollToTop();
+                              }
+                            : null,
+                        icon: const Icon(Icons.chevron_right),
+                      ),
+                    ],
+                  ),
+                )
+              : const SizedBox.shrink()),
+        ),
+      ),
+      floatingActionButton: _showScrollUp
+          ? FloatingActionButton.small(
+              onPressed: _scrollToTop,
+              child: const Icon(Icons.arrow_upward),
+            )
+          : null,
       body: Column(
         spacing: 8,
         children: [
@@ -133,9 +199,6 @@ class SearchView extends StatelessWidget {
                   );
                 }
 
-                final hasMore = viewModel.hasNext.value;
-                final itemCount = viewModel.results.length + (hasMore ? 1 : 0);
-
                 return Column(
                   children: [
                     Padding(
@@ -151,19 +214,8 @@ class SearchView extends StatelessWidget {
                     Expanded(
                       child: ListView.builder(
                         controller: scrollController,
-                        itemCount: itemCount,
+                        itemCount: viewModel.results.length,
                         itemBuilder: (context, index) {
-                          if (index == viewModel.results.length) {
-                            return Padding(
-                              padding: const EdgeInsets.all(16),
-                              child: Center(
-                                child: Obx(() => viewModel.isLoading.value
-                                    ? const CircularProgressIndicator()
-                                    : const SizedBox.shrink()),
-                              ),
-                            );
-                          }
-
                           final file = viewModel.results[index];
                           return Card(
                             margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
@@ -233,6 +285,8 @@ class SearchView extends StatelessWidget {
                         },
                       ),
                     ),
+                    if (viewModel.isLoading.value)
+                      const LinearProgressIndicator(),
                   ],
                 );
               }
@@ -335,7 +389,6 @@ class SearchView extends StatelessWidget {
       );
     }
 
-    // Default icon for other file types
     final iconData = switch (category) {
       _ when isVideo => Icons.video_file,
       'audio' => Icons.audio_file,

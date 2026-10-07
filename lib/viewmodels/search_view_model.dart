@@ -62,27 +62,34 @@ class SearchViewModel extends GetxController {
 
   Future<void> loadNextPage() async {
     if (hasNext.value) {
-      try {
-        isLoading.value = true;
-        final response = await _repository.searchFiles(
-          query: currentQuery.value,
-          page: currentPage.value + 1,
-          sortBy: sortBy.value,
-          order: order.value,
-          category: category.value,
-        );
+      await loadPage(currentPage.value + 1, append: true);
+    }
+  }
 
-        results.addAll(
-          (response.files).map((json) => FileModel.fromJson(json)).toList(),
-        );
-        totalPages.value = response.pages;
-        currentPage.value = response.currentPage;
-        hasNext.value = response.hasNext;
-      } catch (e) {
-        Get.snackbar('Pagination Error', e.toString());
-      } finally {
-        isLoading.value = false;
+  Future<void> loadPage(int page, {bool append = false}) async {
+    try {
+      isLoading.value = true;
+      final response = await _repository.searchFiles(
+        query: currentQuery.value,
+        page: page,
+        sortBy: sortBy.value,
+        order: order.value,
+        category: category.value,
+      );
+
+      final newFiles = (response.files).map((json) => FileModel.fromJson(json)).toList();
+      if (append) {
+        results.addAll(newFiles);
+      } else {
+        results.assignAll(newFiles);
       }
+      totalPages.value = response.pages;
+      currentPage.value = response.currentPage;
+      hasNext.value = response.hasNext;
+    } catch (e) {
+      Get.snackbar('Error', e.toString());
+    } finally {
+      isLoading.value = false;
     }
   }
 
